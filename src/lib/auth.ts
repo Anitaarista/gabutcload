@@ -30,7 +30,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.plan = (user as { plan?: string }).plan ?? "free";
+        token.plan = typeof user.plan === "string" ? user.plan : "free";
       }
       return token;
     },

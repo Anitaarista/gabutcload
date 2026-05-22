@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { UploadCloud } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
 
 export function UploadZone({ parentId }: { parentId?: string }) {
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const router = useRouter();
 
   const onDrop = (acceptedFiles: File[]) => {
     const formData = new FormData();
@@ -26,7 +28,7 @@ export function UploadZone({ parentId }: { parentId?: string }) {
     xhr.onloadend = () => {
       setUploading(false);
       setProgress(0);
-      window.location.reload();
+      router.refresh();
     };
     xhr.send(formData);
   };

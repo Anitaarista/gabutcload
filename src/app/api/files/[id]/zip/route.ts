@@ -25,7 +25,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     try {
       await stat(abs);
       archive.append(createReadStream(abs), { name: child.name });
-    } catch {
+    } catch (error) {
+      console.error("zip-append-failed", { fileId: child.id, error });
       continue;
     }
   }

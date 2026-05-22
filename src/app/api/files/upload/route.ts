@@ -20,13 +20,37 @@ export async function POST(request: Request) {
 
   for (const file of files) {
     const buffer = Buffer.from(await file.arrayBuffer());
-    const safeName = `${randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+    const originalName = path.basename(file.name);
+    const normalizedExtension = path.extname(originalName).toLowerCase().replace(/[^a-z0-9]/g, "");
+    const extension = normalizedExtension ? `.${normalizedExtension}` : "";
+    const basename = path
+      .basename(originalName, path.extname(originalName))
+      .replace(/[^a-zA-Z0-9_-]/g, "_")
+      .slice(0, 120);
+    const safeName = `${randomUUID()}-${basename || `file-${Date.now()}`}${extension}`;
     await writeFile(path.join(uploadDir, safeName), buffer);
+
+    const detectedType = file.type.startsWith("image/")
+      ? "image"
+      : file.type.startsWith("video/")
+        ? "video"
+        : file.type.startsWith("audio/")
+          ? "audio"
+          : file.type.includes("pdf")
+            ? "pdf"
+            : file.type.includes("zip") || file.type.includes("rar")
+              ? "archive"
+              : file.type.includes("javascript") ||
+                  file.type.includes("json") ||
+                  file.type.includes("xml") ||
+                  file.type.includes("typescript")
+                ? "code"
+                : "document";
 
     await prisma.file.create({
       data: {
         name: file.name,
-        type: file.type.startsWith("image/") ? "image" : "document",
+        type: detectedType,
         mimeType: file.type,
         size: file.size,
         ownerId: session.user.id,
