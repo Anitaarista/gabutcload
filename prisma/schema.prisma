@@ -1,0 +1,133 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./custom.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String           @id @default(cuid())
+  name          String
+  email         String           @unique
+  password      String
+  avatar        String
+  plan          String           @default("free")
+  storageUsed   Int              @default(0)
+  storageTotal  BigInt           @default(10737418240)
+  twoFactor     Boolean          @default(false)
+  vaultPin      String?
+  createdAt     DateTime         @default(now())
+
+  files         File[]
+  activities    Activity[]
+  sharedWithMe  Share[]          @relation("SharedWithUser")
+  workspaces    WorkspaceMember[]
+}
+
+model File {
+  id            String        @id @default(cuid())
+  name          String
+  type          String
+  mimeType      String        @default("")
+  size          Int           @default(0)
+  isFolder      Boolean       @default(false)
+  colorLabel    String?
+  description   String?
+  locked        Boolean       @default(false)
+  encrypted     Boolean       @default(false)
+  isVault       Boolean       @default(false)
+  isTrashed     Boolean       @default(false)
+  trashedAt     DateTime?
+  starred       Boolean       @default(false)
+  thumbnail     String?
+  dimensions    String?
+  duration      String?
+  parentId      String?
+  parent        File?         @relation("FolderStructure", fields: [parentId], references: [id])
+  children      File[]        @relation("FolderStructure")
+  ownerId       String
+  owner         User          @relation(fields: [ownerId], references: [id])
+  workspaceId   String?
+  workspace     Workspace?    @relation(fields: [workspaceId], references: [id])
+  shares        Share[]
+  tags          Tag[]
+  versions      FileVersion[]
+  comments      Comment[]
+  activities    Activity[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Tag {
+  id    String @id @default(cuid())
+  name  String
+  fileId String
+  file   File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+}
+
+model FileVersion {
+  id          String   @id @default(cuid())
+  version     Int
+  size        Int
+  storagePath String
+  modifiedBy  String
+  fileId      String
+  file        File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model Share {
+  id              String   @id @default(cuid())
+  fileId          String
+  file            File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  shareLink       String?  @unique
+  linkPassword    String?
+  linkExpiresAt   DateTime?
+  downloadLimit   Int?
+  downloadCount   Int      @default(0)
+  sharedWithId    String?
+  sharedWith      User?    @relation("SharedWithUser", fields: [sharedWithId], references: [id])
+  role            String   @default("viewer")
+  createdAt       DateTime @default(now())
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  text      String
+  fileId    String
+  file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  authorId  String
+  createdAt DateTime @default(now())
+}
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  storageUsed Int      @default(0)
+  members     WorkspaceMember[]
+  files       File[]
+  createdAt   DateTime @default(now())
+}
+
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  role        String   @default("editor")
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  action    String
+  fileId    String?
+  file      File?    @relation(fields: [fileId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  metadata  String?
+  createdAt DateTime @default(now())
+}
