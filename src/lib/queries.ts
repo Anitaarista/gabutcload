@@ -24,6 +24,8 @@ export async function getRecentFiles(userId: string) {
     orderBy: { updatedAt: 'desc' },
     take: 8,
     include: {
+      comments: true,
+      versions: true,
       tags: true,
       workspace: true
     }
@@ -81,6 +83,6 @@ export async function listFiles(userId: string, parentId: string | null, search?
         : {})
     },
     orderBy: [{ isFolder: 'desc' }, { starred: 'desc' }, { updatedAt: 'desc' }],
-    include: { tags: true, shares: true }
+    include: { tags: true, shares: true, comments: true, versions: true }
   });
 }
